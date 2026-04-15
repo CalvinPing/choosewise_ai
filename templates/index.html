@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChooseWise</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <main class="page">
+        <section class="hero">
+            <h1>ChooseWise</h1>
+            <p class="subtitle">Structured decision-making with weighted scoring and AI recommendations.</p>
+        </section>
+
+        <section class="card">
+            <form method="POST">
+                <div class="option-names">
+                    <div>
+                        <label for="option_a_name">Option A Name</label>
+                        <input id="option_a_name" name="option_a_name" placeholder="Apartment A" required>
+                    </div>
+                    <div>
+                        <label for="option_b_name">Option B Name</label>
+                        <input id="option_b_name" name="option_b_name" placeholder="Apartment B" required>
+                    </div>
+                </div>
+
+                <h2>Decision Criteria</h2>
+                <p class="helper">Rate each option from 1–10 and choose how important each criterion is.</p>
+
+                <div class="grid headings">
+                    <strong>Criterion</strong>
+                    <strong>Weight</strong>
+                    <strong>Option A Score</strong>
+                    <strong>Option B Score</strong>
+                </div>
+
+                {% for i in range(4) %}
+                <div class="grid row">
+                    <input name="criteria" placeholder="Criterion {{ i + 1 }}" required>
+                    <input name="weights" type="number" min="1" max="10" value="5" required>
+                    <input name="option_a_scores" type="number" min="1" max="10" value="5" required>
+                    <input name="option_b_scores" type="number" min="1" max="10" value="5" required>
+                </div>
+                {% endfor %}
+
+                <button type="submit">Analyze</button>
+            </form>
+        </section>
+
+        {% if rows %}
+        <section class="card results">
+            <h2>Weighted Score Results</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Criterion</th>
+                        <th>Weight</th>
+                        <th>{{ option_a_name }}</th>
+                        <th>{{ option_b_name }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row.criterion }}</td>
+                        <td>{{ row.weight }}</td>
+                        <td>{{ row.option_a_weighted }}</td>
+                        <td>{{ row.option_b_weighted }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="totals">
+                <div class="total-box">
+                    <span>{{ option_a_name }}</span>
+                    <strong>{{ total_a }}</strong>
+                </div>
+                <div class="total-box">
+                    <span>{{ option_b_name }}</span>
+                    <strong>{{ total_b }}</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="card results">
+            <div class="badge-row">
+                <h2>Recommendation</h2>
+                {% if used_ai %}
+                    <span class="badge">OpenAI enabled</span>
+                {% else %}
+                    <span class="badge muted">Fallback mode</span>
+                {% endif %}
+            </div>
+
+            <p><strong>Best option:</strong> {{ recommendation.best_option }}</p>
+            <p>{{ recommendation.summary }}</p>
+
+            <h3>Key reasoning</h3>
+            <ul>
+                {% for item in recommendation.key_reasoning %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Risks</h3>
+            <ul>
+                {% for item in recommendation.risks %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Suggested next step</h3>
+            <p>{{ recommendation.next_step }}</p>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

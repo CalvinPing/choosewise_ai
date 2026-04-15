@@ -1,0 +1,33 @@
+A. Value Proposition
+ChooseWise is designed for students and everyday users who struggle with decisions that involve multiple tradeoffs, like apartments, classes, jobs, or purchases. The problem is that these decisions are often made in an unstructured way, which creates stress and uncertainty. ChooseWise solves this by combining weighted scoring with an AI-generated recommendation, so users can compare options more clearly and understand the reasoning behind the result. This matters because it makes difficult decisions faster, more confident, and easier to explain.
+
+B. Product Overview
+- ChooseWise is a web-based decision support tool.
+- It allows a user to name two options, enter decision criteria, assign weights, and score both choices.
+- The app calculates weighted totals for both options and displays the result in a clear table.
+- It also uses the OpenAI API on the backend to generate a recommendation, key reasoning, risks, and a suggested next step.
+- The product was built with Flask, Python, HTML, and CSS.
+- This is a code-assisted build with a live, functional prototype.
+
+C. What Changed Since Last Demo
+- Added weighted scoring to make option comparison more structured
+- Added OpenAI-powered recommendation output
+- Improved the UI and result layout for clarity
+- Added backend-only API integration for security
+- Prepared the app for live deployment with production dependencies
+
+D. Enhancement Detail
+1. Weighted scoring: I changed the app from a basic comparison idea into a weighted scoring workflow so users could reflect priorities more clearly. The result was better because the product became more structured and useful.
+2. AI recommendation engine: I added an OpenAI API integration so the app could explain the result instead of only showing numbers. The result was better because users now get reasoning, risks, and next steps along with the score.
+3. UX and layout improvements: I reorganized the input flow and output sections to make the app easier to follow during the demo. The result was better because the product now feels clearer and more polished.
+4. Deployment/security architecture: I moved the AI call fully to the backend and used environment variables for the API key. The result was better because the repo is safe to publish and the app is ready for a live hosted demo.
+
+E. Self-Assessment
+Biggest remaining product or technical risk: The app still only supports two options and a fixed number of criteria, so it is not yet flexible enough for more complex real-world decisions.
+What I would improve with more time: I would add support for more options, dynamic criteria, saved decision histories, and collaborative comparison features.
+What I learned this semester about building products: I learned that product quality is not just about adding features; it is also about iteration, clarity, usability, and making tradeoffs that improve the core user experience.
+
+F. Links
+Repository link: add your GitHub repo here
+Live demo URL: add your deployed Render URL here
+Supporting materials: optional YouTube demo link or screenshots
