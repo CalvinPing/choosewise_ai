@@ -1,4 +1,6 @@
 import os
+import json
+import re
 from flask import Flask, render_template, request
 from dotenv import load_dotenv
 
@@ -14,114 +16,140 @@ app = Flask(__name__)
 MODEL = os.getenv("CHOOSEWISE_MODEL", "gpt-4.1-mini")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 
-def calculate_weighted_totals(criteria, weights, option_a_scores, option_b_scores):
-    rows = []
-    total_a = 0
-    total_b = 0
 
-    for i, criterion in enumerate(criteria):
-        c = criterion.strip() or f"Criterion {i+1}"
-        w = safe_int(weights[i])
-        a = safe_int(option_a_scores[i])
-        b = safe_int(option_b_scores[i])
+def strip_markdown_fences(text):
+    """Remove markdown code fences that OpenAI sometimes wraps around JSON."""
+    text = text.strip()
+    match = re.match(r'^```(?:json)?\s*\n?(.*?)\n?```$', text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return text
 
-        weighted_a = w * a
-        weighted_b = w * b
-        total_a += weighted_a
-        total_b += weighted_b
 
-        rows.append({
-            "criterion": c,
-            "weight": w,
-            "option_a_score": a,
-            "option_b_score": b,
-            "option_a_weighted": weighted_a,
-            "option_b_weighted": weighted_b,
-        })
-
-    return rows, total_a, total_b
-
-def safe_int(value, default=0):
+def safe_int(value, default=5):
     try:
         return int(value)
     except (TypeError, ValueError):
         return default
 
-def build_decision_payload(option_a_name, option_b_name, rows, total_a, total_b):
+
+def calculate_weighted_totals(criteria_names, weights, scores, option_names):
+    """
+    criteria_names: list[str]
+    weights:        list[int]
+    scores:         list[list[int]] — scores[i][j] = criterion i, option j
+    option_names:   list[str]
+
+    Returns rows (list of dicts), totals (list of int, one per option).
+    """
+    n_options = len(option_names)
+    totals = [0] * n_options
+    rows = []
+
+    for i, criterion in enumerate(criteria_names):
+        w = safe_int(weights[i]) if i < len(weights) else 5
+        criterion_scores = scores[i] if i < len(scores) else []
+
+        raw = []
+        weighted = []
+        for j in range(n_options):
+            s = safe_int(criterion_scores[j]) if j < len(criterion_scores) else 5
+            ws = w * s
+            raw.append(s)
+            weighted.append(ws)
+            totals[j] += ws
+
+        rows.append({
+            "criterion": criterion.strip() or f"Criterion {i + 1}",
+            "weight": w,
+            "scores": raw,
+            "weighted": weighted,
+            "max_weighted": max(weighted) if weighted else 0,
+            "min_weighted": min(weighted) if weighted else 0,
+        })
+
+    return rows, totals
+
+
+def build_decision_payload(option_names, rows, totals):
+    totals_dict = {option_names[j]: totals[j] for j in range(len(option_names))}
     return {
-        "option_a": option_a_name,
-        "option_b": option_b_name,
-        "weighted_total_a": total_a,
-        "weighted_total_b": total_b,
+        "options": option_names,
+        "totals": totals_dict,
         "criteria": rows,
     }
 
+
+def find_top_criterion(rows):
+    """Return the row with the largest spread between best and worst weighted scores."""
+    if not rows:
+        return None
+    def spread(row):
+        w = row["weighted"]
+        return max(w) - min(w) if len(w) >= 2 else 0
+    return max(rows, key=spread)
+
+
 def fallback_recommendation(payload):
-    option_a = payload["option_a"]
-    option_b = payload["option_b"]
-    total_a = payload["weighted_total_a"]
-    total_b = payload["weighted_total_b"]
+    options = payload["options"]
+    totals = payload["totals"]
 
-    if total_a > total_b:
-        winner = option_a
-        loser = option_b
-    elif total_b > total_a:
-        winner = option_b
-        loser = option_a
-    else:
+    ranked = sorted(options, key=lambda o: totals[o], reverse=True)
+    winner = ranked[0]
+
+    if len(ranked) > 1 and totals[ranked[0]] == totals[ranked[1]]:
         winner = "Tie"
-        loser = None
-
-    if winner == "Tie":
-        recommendation = (
-            "These two options came out evenly in the weighted scoring. "
-            "A good next step would be to add one more decision criterion or increase "
-            "the weights on the factors you care about most."
+        summary = (
+            "The top options scored equally in the weighted scoring. "
+            "Try adjusting weights or adding a tiebreaker criterion."
         )
     else:
-        recommendation = (
-            f"Based on the weighted scores, {winner} is the stronger option right now. "
-            f"It performs better on the factors you marked as most important."
+        summary = (
+            f"Based on the weighted scores, {winner} is the strongest choice. "
+            f"It outperforms the other options across your highest-weighted criteria."
         )
+
+    score_lines = [f"{i + 1}. {name}: {totals[name]} pts" for i, name in enumerate(ranked)]
 
     return {
         "mode": "fallback",
-        "summary": recommendation,
         "best_option": winner,
-        "key_reasoning": [
-            "This fallback mode uses weighted scoring only.",
-            f"{option_a} total: {total_a}",
-            f"{option_b} total: {total_b}",
-        ],
+        "ranking": ranked,
+        "summary": summary,
+        "key_reasoning": ["Score-based ranking (no AI key configured)."] + score_lines,
         "risks": [
             "Numeric scores may not capture every real-world factor.",
-            "You may want to add cost, time, or personal fit if those matter."
+            "Consider adding criteria for cost, time, or personal fit if relevant.",
         ],
         "next_step": (
-            f"Review the top-weighted criteria and double-check whether the lower-scoring option, "
-            f"{loser if loser else 'either option'}, has any hidden advantages."
-        )
+            f"Review your highest-weighted criteria and verify whether "
+            f"{ranked[-1] if len(ranked) > 1 else 'lower-scoring options'} "
+            f"might have advantages not captured in the scores."
+        ),
     }
+
 
 def ai_recommendation(payload):
     if not OPENAI_API_KEY or OpenAI is None:
         return fallback_recommendation(payload)
 
     client = OpenAI(api_key=OPENAI_API_KEY)
+    options_list = ", ".join(f'"{o}"' for o in payload["options"])
 
     prompt = f"""
-You are helping a user choose between two options.
+You are helping a user choose between {len(payload["options"])} options.
 
-Return a concise recommendation in JSON with these exact keys:
-summary, best_option, key_reasoning, risks, next_step
+Return a concise recommendation as JSON with these exact keys:
+best_option, ranking, summary, key_reasoning, risks, next_step
 
 Rules:
-- best_option must be either "{payload["option_a"]}", "{payload["option_b"]}", or "Tie"
+- best_option must be exactly one of: {options_list}
+- ranking must be a JSON array of ALL option names ordered from best to worst
 - key_reasoning must be a JSON array of 2 to 4 short bullet-style strings
 - risks must be a JSON array of 1 to 3 short bullet-style strings
 - Keep the answer grounded in the structured data below
 - Do not invent external facts
-- If scores are close, acknowledge uncertainty
+- If scores are close, acknowledge the uncertainty
 
 Structured decision data:
 {payload}
@@ -136,58 +164,75 @@ Structured decision data:
     if not text:
         return fallback_recommendation(payload)
 
-    import json
+    clean = strip_markdown_fences(text)
     try:
-        parsed = json.loads(text)
+        parsed = json.loads(clean)
         parsed["mode"] = "openai"
+        # Ensure ranking exists; fall back to score-sorted order
+        if "ranking" not in parsed or not isinstance(parsed["ranking"], list):
+            totals = payload["totals"]
+            parsed["ranking"] = sorted(payload["options"], key=lambda o: totals.get(o, 0), reverse=True)
         return parsed
     except Exception:
         return {
             "mode": "openai",
-            "summary": text,
             "best_option": "See summary",
+            "ranking": [],
+            "summary": clean,
             "key_reasoning": ["The model returned a plain-text recommendation."],
             "risks": ["Review the recommendation for completeness."],
-            "next_step": "Use the structured scoring table to validate the recommendation."
+            "next_step": "Use the structured scoring table to validate the recommendation.",
         }
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     context = {
+        "option_names": None,
         "rows": None,
-        "total_a": None,
-        "total_b": None,
+        "totals": None,
+        "ranked_options": None,
         "recommendation": None,
         "used_ai": False,
+        "top_criterion": None,
     }
 
     if request.method == "POST":
-        option_a_name = request.form.get("option_a_name", "Option A").strip() or "Option A"
-        option_b_name = request.form.get("option_b_name", "Option B").strip() or "Option B"
+        try:
+            option_names = json.loads(request.form.get("option_names_json", "[]"))
+            criteria_names = json.loads(request.form.get("criteria_json", "[]"))
+            weights = json.loads(request.form.get("weights_json", "[]"))
+            scores = json.loads(request.form.get("scores_json", "[]"))
+        except (ValueError, KeyError):
+            return render_template("index.html", **context, error="Invalid form data. Please try again.")
 
-        criteria = request.form.getlist("criteria")
-        weights = request.form.getlist("weights")
-        option_a_scores = request.form.getlist("option_a_scores")
-        option_b_scores = request.form.getlist("option_b_scores")
+        # Require at least 2 options and 1 criterion
+        if len(option_names) < 2 or len(criteria_names) < 1:
+            return render_template("index.html", **context, error="Please enter at least 2 options and 1 criterion.")
 
-        rows, total_a, total_b = calculate_weighted_totals(
-            criteria, weights, option_a_scores, option_b_scores
-        )
-
-        payload = build_decision_payload(option_a_name, option_b_name, rows, total_a, total_b)
+        rows, totals = calculate_weighted_totals(criteria_names, weights, scores, option_names)
+        payload = build_decision_payload(option_names, rows, totals)
         recommendation = ai_recommendation(payload)
 
+        # Sort options by total for the results display
+        ranked_options = sorted(
+            zip(option_names, totals),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
         context.update({
-            "option_a_name": option_a_name,
-            "option_b_name": option_b_name,
+            "option_names": option_names,
             "rows": rows,
-            "total_a": total_a,
-            "total_b": total_b,
+            "totals": totals,
+            "ranked_options": ranked_options,
             "recommendation": recommendation,
             "used_ai": recommendation.get("mode") == "openai",
+            "top_criterion": find_top_criterion(rows),
         })
 
     return render_template("index.html", **context)
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))

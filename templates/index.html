@@ -10,48 +10,60 @@
     <main class="page">
         <section class="hero">
             <h1>ChooseWise</h1>
-            <p class="subtitle">Structured decision-making with weighted scoring and AI recommendations.</p>
+            <p class="subtitle">Weighted scoring + AI recommendations to help you decide with confidence.</p>
         </section>
 
         <section class="card">
-            <form method="POST">
+            <form method="POST" id="decision-form">
                 <div class="option-names">
                     <div>
-                        <label for="option_a_name">Option A Name</label>
-                        <input id="option_a_name" name="option_a_name" placeholder="Apartment A" required>
+                        <label for="option_a_name">Option A</label>
+                        <input id="option_a_name" name="option_a_name" placeholder="e.g. Apartment A" required>
                     </div>
                     <div>
-                        <label for="option_b_name">Option B Name</label>
-                        <input id="option_b_name" name="option_b_name" placeholder="Apartment B" required>
+                        <label for="option_b_name">Option B</label>
+                        <input id="option_b_name" name="option_b_name" placeholder="e.g. Apartment B" required>
                     </div>
                 </div>
 
-                <h2>Decision Criteria</h2>
-                <p class="helper">Rate each option from 1–10 and choose how important each criterion is.</p>
+                <div class="criteria-header">
+                    <div>
+                        <h2>Decision Criteria</h2>
+                        <p class="helper">Rate each option 1–10. Set how important each criterion is (1–10).</p>
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="loadExample()">Try an example</button>
+                </div>
 
                 <div class="grid headings">
                     <strong>Criterion</strong>
                     <strong>Weight</strong>
                     <strong>Option A Score</strong>
                     <strong>Option B Score</strong>
+                    <span></span>
                 </div>
 
-                {% for i in range(4) %}
-                <div class="grid row">
-                    <input name="criteria" placeholder="Criterion {{ i + 1 }}" required>
-                    <input name="weights" type="number" min="1" max="10" value="5" required>
-                    <input name="option_a_scores" type="number" min="1" max="10" value="5" required>
-                    <input name="option_b_scores" type="number" min="1" max="10" value="5" required>
+                <div id="criteria-rows">
+                    {% for i in range(4) %}
+                    <div class="grid row">
+                        <input name="criteria" placeholder="Criterion {{ i + 1 }}" required>
+                        <input name="weights" type="number" min="1" max="10" value="5" required>
+                        <input name="option_a_scores" type="number" min="1" max="10" value="5" required>
+                        <input name="option_b_scores" type="number" min="1" max="10" value="5" required>
+                        <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove criterion">×</button>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
 
-                <button type="submit">Analyze</button>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="addRow()">+ Add criterion</button>
+                    <button type="submit" id="submit-btn">Analyze →</button>
+                </div>
             </form>
         </section>
 
         {% if rows %}
         <section class="card results">
-            <h2>Weighted Score Results</h2>
+            <h2>Weighted Score Breakdown</h2>
             <table>
                 <thead>
                     <tr>
@@ -63,22 +75,33 @@
                 </thead>
                 <tbody>
                     {% for row in rows %}
-                    <tr>
-                        <td>{{ row.criterion }}</td>
+                    <tr {% if top_criterion and row.criterion == top_criterion.criterion %}class="top-row"{% endif %}>
+                        <td>
+                            {{ row.criterion }}
+                            {% if top_criterion and row.criterion == top_criterion.criterion %}
+                                <span class="top-badge">biggest gap</span>
+                            {% endif %}
+                        </td>
                         <td>{{ row.weight }}</td>
-                        <td>{{ row.option_a_weighted }}</td>
-                        <td>{{ row.option_b_weighted }}</td>
+                        <td class="{% if row.option_a_weighted > row.option_b_weighted %}cell-win{% elif row.option_a_weighted < row.option_b_weighted %}cell-lose{% endif %}">
+                            {{ row.option_a_weighted }}
+                        </td>
+                        <td class="{% if row.option_b_weighted > row.option_a_weighted %}cell-win{% elif row.option_b_weighted < row.option_a_weighted %}cell-lose{% endif %}">
+                            {{ row.option_b_weighted }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
 
             <div class="totals">
-                <div class="total-box">
+                <div class="total-box {% if total_a > total_b %}winner{% endif %}">
+                    {% if total_a > total_b %}<div class="winner-label">Winner</div>{% endif %}
                     <span>{{ option_a_name }}</span>
                     <strong>{{ total_a }}</strong>
                 </div>
-                <div class="total-box">
+                <div class="total-box {% if total_b > total_a %}winner{% endif %}">
+                    {% if total_b > total_a %}<div class="winner-label">Winner</div>{% endif %}
                     <span>{{ option_b_name }}</span>
                     <strong>{{ total_b }}</strong>
                 </div>
@@ -87,35 +110,123 @@
 
         <section class="card results">
             <div class="badge-row">
-                <h2>Recommendation</h2>
+                <h2>AI Recommendation</h2>
                 {% if used_ai %}
-                    <span class="badge">OpenAI enabled</span>
+                    <span class="badge">Powered by OpenAI</span>
                 {% else %}
-                    <span class="badge muted">Fallback mode</span>
+                    <span class="badge muted">Fallback mode — no AI key</span>
                 {% endif %}
             </div>
 
-            <p><strong>Best option:</strong> {{ recommendation.best_option }}</p>
-            <p>{{ recommendation.summary }}</p>
+            {% if not used_ai %}
+            <p class="helper" style="margin-bottom: 12px;">
+                No OpenAI API key detected. Showing a score-based recommendation instead.
+                To enable AI analysis, add <code>OPENAI_API_KEY</code> to your environment.
+            </p>
+            {% endif %}
 
-            <h3>Key reasoning</h3>
-            <ul>
-                {% for item in recommendation.key_reasoning %}
-                    <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
+            <div class="best-option-callout {% if recommendation.best_option == 'Tie' %}tie{% endif %}">
+                <div class="callout-label">Best option</div>
+                <div class="callout-value">{{ recommendation.best_option }}</div>
+            </div>
 
-            <h3>Risks</h3>
-            <ul>
-                {% for item in recommendation.risks %}
-                    <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
+            <p class="rec-summary">{{ recommendation.summary }}</p>
 
-            <h3>Suggested next step</h3>
-            <p>{{ recommendation.next_step }}</p>
+            <div class="rec-section">
+                <h3>Key reasoning</h3>
+                <ul>
+                    {% for item in recommendation.key_reasoning %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="rec-section">
+                <h3>Risks to consider</h3>
+                <ul>
+                    {% for item in recommendation.risks %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="rec-section next-step">
+                <h3>Suggested next step</h3>
+                <p>{{ recommendation.next_step }}</p>
+            </div>
         </section>
         {% endif %}
     </main>
+
+    <script>
+        let rowCount = {{ rows | length if rows else 4 }};
+
+        function addRow() {
+            rowCount++;
+            const container = document.getElementById('criteria-rows');
+            const row = document.createElement('div');
+            row.className = 'grid row';
+            row.innerHTML =
+                `<input name="criteria" placeholder="Criterion ${rowCount}" required>` +
+                `<input name="weights" type="number" min="1" max="10" value="5" required>` +
+                `<input name="option_a_scores" type="number" min="1" max="10" value="5" required>` +
+                `<input name="option_b_scores" type="number" min="1" max="10" value="5" required>` +
+                `<button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove criterion">×</button>`;
+            container.appendChild(row);
+            updateRemoveButtons();
+            row.querySelector('input').focus();
+        }
+
+        function removeRow(btn) {
+            btn.closest('.row').remove();
+            rowCount--;
+            updateRemoveButtons();
+        }
+
+        function updateRemoveButtons() {
+            const rows = document.querySelectorAll('#criteria-rows .row');
+            rows.forEach(row => {
+                const btn = row.querySelector('.remove-btn');
+                if (btn) btn.disabled = rows.length <= 2;
+            });
+        }
+
+        function loadExample() {
+            document.getElementById('option_a_name').value = 'Apartment A';
+            document.getElementById('option_b_name').value = 'Apartment B';
+
+            const examples = [
+                { criterion: 'Location',  weight: 8, a: 7, b: 9 },
+                { criterion: 'Price',     weight: 9, a: 8, b: 5 },
+                { criterion: 'Space',     weight: 6, a: 9, b: 6 },
+                { criterion: 'Commute',   weight: 7, a: 6, b: 8 },
+            ];
+
+            const rows = document.querySelectorAll('#criteria-rows .row');
+            // fill existing rows, add more if needed
+            examples.forEach((ex, i) => {
+                let row;
+                if (i < rows.length) {
+                    row = rows[i];
+                } else {
+                    addRow();
+                    const allRows = document.querySelectorAll('#criteria-rows .row');
+                    row = allRows[allRows.length - 1];
+                }
+                row.querySelectorAll('input')[0].value = ex.criterion;
+                row.querySelectorAll('input')[1].value = ex.weight;
+                row.querySelectorAll('input')[2].value = ex.a;
+                row.querySelectorAll('input')[3].value = ex.b;
+            });
+        }
+
+        document.getElementById('decision-form').addEventListener('submit', function () {
+            const btn = document.getElementById('submit-btn');
+            btn.textContent = 'Analyzing…';
+            btn.disabled = true;
+        });
+
+        updateRemoveButtons();
+    </script>
 </body>
 </html>
