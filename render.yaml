@@ -10,3 +10,5 @@ services:
         value: gpt-4.1-mini
       - key: OPENAI_API_KEY
         sync: false
+      - key: SECRET_KEY
+        sync: false
