@@ -1,7 +1,7 @@
 import os
 import json
 import re
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +15,7 @@ app = Flask(__name__)
 
 MODEL = os.getenv("CHOOSEWISE_MODEL", "gpt-4.1-mini")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+app.secret_key = os.getenv("SECRET_KEY", "choosewise-dev-key")
 
 
 def strip_markdown_fences(text):
@@ -206,7 +207,6 @@ def index():
         except (ValueError, KeyError):
             return render_template("index.html", **context, error="Invalid form data. Please try again.")
 
-        # Require at least 2 options and 1 criterion
         if len(option_names) < 2 or len(criteria_names) < 1:
             return render_template("index.html", **context, error="Please enter at least 2 options and 1 criterion.")
 
@@ -214,22 +214,29 @@ def index():
         payload = build_decision_payload(option_names, rows, totals)
         recommendation = ai_recommendation(payload)
 
-        # Sort options by total for the results display
         ranked_options = sorted(
             zip(option_names, totals),
             key=lambda x: x[1],
             reverse=True
         )
 
-        context.update({
+        # Store results in session, then redirect so a page refresh
+        # hits GET with an empty session — results won't reappear.
+        session["result"] = {
             "option_names": option_names,
             "rows": rows,
             "totals": totals,
-            "ranked_options": ranked_options,
+            "ranked_options": [list(pair) for pair in ranked_options],
             "recommendation": recommendation,
             "used_ai": recommendation.get("mode") == "openai",
             "top_criterion": find_top_criterion(rows),
-        })
+        }
+        return redirect(url_for("index"))
+
+    # GET: read results once from session, then clear them.
+    result = session.pop("result", None)
+    if result:
+        context.update(result)
 
     return render_template("index.html", **context)
 

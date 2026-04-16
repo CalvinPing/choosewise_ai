@@ -11,10 +11,10 @@
     --text-muted:   #7b88a8;
     --text-faint:   #404d6b;
 
-    --accent:       #7c6af6;
-    --accent-hover: #6a58e8;
-    --accent-dim:   rgba(124, 106, 246, 0.14);
-    --accent-glow:  rgba(124, 106, 246, 0.38);
+    --accent:       #2dd4bf;
+    --accent-hover: #14b8a6;
+    --accent-dim:   rgba(45, 212, 191, 0.12);
+    --accent-glow:  rgba(45, 212, 191, 0.35);
 
     --green:        #4ade80;
     --green-dim:    rgba(74, 222, 128, 0.09);
@@ -67,7 +67,7 @@ body {
     font-size: 2.6rem;
     font-weight: 800;
     letter-spacing: -1.5px;
-    background: linear-gradient(130deg, #818cf8 0%, #c084fc 60%, #e879f9 100%);
+    background: linear-gradient(130deg, #2dd4bf 0%, #06b6d4 55%, #67e8f9 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -318,18 +318,18 @@ button {
 button:disabled { opacity: 0.3; cursor: default; }
 
 #submit-btn {
-    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    background: linear-gradient(135deg, #0d9488, #0891b2);
     color: #fff;
     padding: 13px 36px;
     font-weight: 700;
     font-size: 1rem;
     border-radius: 10px;
-    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.45);
+    box-shadow: 0 4px 18px rgba(13, 148, 136, 0.45);
     letter-spacing: 0.02em;
 }
 
 #submit-btn:hover:not(:disabled) {
-    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 6px 24px rgba(13, 148, 136, 0.6);
     transform: translateY(-1px);
 }
 
@@ -382,7 +382,7 @@ button:disabled { opacity: 0.3; cursor: default; }
     background: var(--accent-dim);
     color: var(--accent);
     padding: 6px 13px;
-    border: 1px solid rgba(124, 106, 246, 0.28);
+    border: 1px solid rgba(45, 212, 191, 0.28);
     font-size: 0.81rem;
     font-weight: 600;
     white-space: nowrap;
@@ -587,7 +587,7 @@ button:disabled { opacity: 0.3; cursor: default; }
 .badge.ai {
     background: var(--accent-dim);
     color: var(--accent);
-    border: 1px solid rgba(124, 106, 246, 0.3);
+    border: 1px solid rgba(45, 212, 191, 0.3);
 }
 
 .badge.muted {
