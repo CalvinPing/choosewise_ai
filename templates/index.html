@@ -19,44 +19,45 @@
 
         <section class="card">
             <form method="POST" id="decision-form" novalidate>
-                <!-- Hidden fields — populated by JS on submit -->
                 <input type="hidden" id="option_names_json" name="option_names_json">
-                <input type="hidden" id="criteria_json" name="criteria_json">
-                <input type="hidden" id="weights_json" name="weights_json">
-                <input type="hidden" id="scores_json" name="scores_json">
+                <input type="hidden" id="criteria_json"     name="criteria_json">
+                <input type="hidden" id="weights_json"      name="weights_json">
+                <input type="hidden" id="scores_json"       name="scores_json">
 
                 <div class="form-toolbar">
                     <div>
-                        <h2 style="margin:0 0 2px;">Your Decision</h2>
-                        <p class="helper">Add the options you're comparing and the criteria that matter to you.</p>
+                        <h2>Your Decision</h2>
+                        <p class="helper">Add what you're comparing and the criteria that matter to you.</p>
                     </div>
-                    <button type="button" class="btn-secondary" onclick="loadExample()">Try an example</button>
+                    <div class="example-picker" id="example-picker">
+                        <button type="button" class="btn-ghost" id="example-btn" onclick="toggleExampleMenu()">
+                            Examples ▾
+                        </button>
+                        <div class="example-menu" id="example-menu">
+                            <button type="button" onclick="loadExample('restaurants')">Restaurants</button>
+                            <button type="button" onclick="loadExample('assignments')">Assignments</button>
+                            <button type="button" onclick="loadExample('apartments')">Apartments</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="table-wrapper">
-                    <table id="decision-table">
-                        <thead>
-                            <tr id="options-row">
-                                <th class="col-criterion">Criterion</th>
-                                <th class="col-weight">Weight</th>
-                                <!-- Option header cells injected here by JS -->
-                                <th class="col-add-option">
-                                    <button type="button" class="btn-add-col" onclick="addOption()">+ Option</button>
-                                </th>
-                                <th class="col-remove"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="criteria-body">
-                            <!-- Criterion rows injected by JS on page load -->
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="99">
-                                    <button type="button" class="btn-add-row" onclick="addCriterion()">+ Add criterion</button>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                <!-- Options row -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <span class="section-label">Options</span>
+                        <button type="button" class="btn-add" onclick="addOption()">+ Add option</button>
+                    </div>
+                    <div id="options-container" class="options-grid"></div>
+                </div>
+
+                <!-- Criteria + scores -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <span class="section-label">Criteria &amp; Scores</span>
+                        <span class="section-hint">Score each option 1–10. Weight = how much it matters.</span>
+                    </div>
+                    <div id="criteria-container"></div>
+                    <button type="button" class="btn-add-row" onclick="addCriterion()">+ Add criterion</button>
                 </div>
 
                 <div class="form-actions">
@@ -66,10 +67,12 @@
         </section>
 
         {% if rows %}
-        <!-- ── Score breakdown ── -->
-        <section class="card results">
+        <div id="results"></div>
+
+        <!-- Score breakdown -->
+        <section class="card results-card">
             <h2>Weighted Score Breakdown</h2>
-            <div class="table-wrapper">
+            <div class="table-scroll">
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -104,7 +107,6 @@
                 </table>
             </div>
 
-            <!-- Ranked totals -->
             <div class="ranked-totals">
                 {% for name, total in ranked_options %}
                 <div class="rank-box {% if loop.first %}winner{% endif %}">
@@ -122,21 +124,21 @@
             </div>
         </section>
 
-        <!-- ── AI Recommendation ── -->
-        <section class="card results">
+        <!-- AI Recommendation -->
+        <section class="card results-card">
             <div class="badge-row">
                 <h2>AI Recommendation</h2>
                 {% if used_ai %}
-                    <span class="badge">Powered by OpenAI</span>
+                    <span class="badge ai">Powered by OpenAI</span>
                 {% else %}
                     <span class="badge muted">Fallback mode — no AI key</span>
                 {% endif %}
             </div>
 
             {% if not used_ai %}
-            <p class="helper" style="margin-bottom:14px;">
-                No OpenAI API key detected. Showing a score-based summary instead.
-                To enable AI reasoning, add <code>OPENAI_API_KEY</code> to your environment.
+            <p class="fallback-note">
+                No OpenAI API key detected. Showing a score-based summary.
+                Add <code>OPENAI_API_KEY</code> to your environment to enable AI reasoning.
             </p>
             {% endif %}
 
@@ -147,7 +149,7 @@
 
             {% if recommendation.ranking and recommendation.ranking | length > 2 %}
             <div class="ranking-row">
-                <span class="ranking-label">Ranking:</span>
+                <span class="ranking-label">Ranking</span>
                 {% for name in recommendation.ranking %}
                     <span class="ranking-item">{{ loop.index }}. {{ name }}</span>
                     {% if not loop.last %}<span class="ranking-sep">›</span>{% endif %}
@@ -160,18 +162,14 @@
             <div class="rec-section">
                 <h3>Key reasoning</h3>
                 <ul>
-                    {% for item in recommendation.key_reasoning %}
-                        <li>{{ item }}</li>
-                    {% endfor %}
+                    {% for item in recommendation.key_reasoning %}<li>{{ item }}</li>{% endfor %}
                 </ul>
             </div>
 
             <div class="rec-section">
                 <h3>Risks to consider</h3>
                 <ul>
-                    {% for item in recommendation.risks %}
-                        <li>{{ item }}</li>
-                    {% endfor %}
+                    {% for item in recommendation.risks %}<li>{{ item }}</li>{% endfor %}
                 </ul>
             </div>
 
@@ -184,199 +182,204 @@
     </main>
 
     <script>
-    // ── State ──────────────────────────────────────────────────────────────
-    let optionCount = 0;
-    let criterionCount = 0;
+    let nextOptionId = 1;
 
-    // ── Init ───────────────────────────────────────────────────────────────
-    initTable(2, 4);
+    // ── Option management ──────────────────────────────────────────────────
+    function addOption(name, focusNew) {
+        name = name || '';
+        focusNew = focusNew !== false;
+        const id = 'opt_' + (nextOptionId++);
+        const idx = document.querySelectorAll('.option-pill').length + 1;
+        const placeholder = 'Option ' + idx;
 
-    function initTable(numOptions, numCriteria) {
-        // Clear header option cells (keep first two: Criterion, Weight, and last two: add-btn, remove)
-        const headerRow = document.getElementById('options-row');
-        // Remove existing option TH cells (between index 2 and second-to-last)
-        while (headerRow.cells.length > 3) {
-            headerRow.deleteCell(2);
-        }
-        optionCount = 0;
+        const pill = document.createElement('div');
+        pill.className = 'option-pill';
+        pill.dataset.optionId = id;
+        pill.innerHTML =
+            '<input type="text" class="option-name-input" placeholder="' + placeholder + '" ' +
+            'value="' + name + '" data-option-id="' + id + '" ' +
+            'oninput="updateOptionLabels(\'' + id + '\', this.value)">' +
+            '<button type="button" class="remove-option-btn" onclick="removeOption(\'' + id + '\')" title="Remove">×</button>';
+        document.getElementById('options-container').appendChild(pill);
 
-        // Clear body
-        document.getElementById('criteria-body').innerHTML = '';
-        criterionCount = 0;
-
-        for (let j = 0; j < numOptions; j++) addOption(false);
-        for (let i = 0; i < numCriteria; i++) addCriterion(false);
-
-        updateRemoveButtons();
-    }
-
-    // ── Add / remove options (columns) ─────────────────────────────────────
-    function addOption(focusNew = true) {
-        optionCount++;
-        const headerRow = document.getElementById('options-row');
-        const addCell = headerRow.cells[headerRow.cells.length - 2]; // before remove-col
-
-        const th = document.createElement('th');
-        th.className = 'option-header';
-        th.innerHTML =
-            `<div class="option-header-inner">` +
-            `<input type="text" class="option-name-input" placeholder="Option ${optionCount}">` +
-            `<button type="button" class="remove-option-btn" onclick="removeOption(this)" title="Remove option">×</button>` +
-            `</div>`;
-        headerRow.insertBefore(th, addCell);
-
-        // Add a score cell to every existing criterion row
-        document.querySelectorAll('#criteria-body tr').forEach(row => {
-            const removeTd = row.querySelector('.remove-td');
-            const td = document.createElement('td');
-            td.className = 'score-td';
-            td.innerHTML = `<input type="number" min="1" max="10" value="5" class="score-input">`;
-            row.insertBefore(td, removeTd);
+        // Add a score item to every existing criterion block
+        document.querySelectorAll('.criterion-block').forEach(function(block) {
+            var inp = pill.querySelector('.option-name-input');
+            appendScoreItem(block.querySelector('.score-grid'), id, name || placeholder);
         });
 
-        if (focusNew) {
-            th.querySelector('.option-name-input').focus();
-        }
-        updateRemoveButtons();
+        if (focusNew) pill.querySelector('.option-name-input').focus();
+        updateOptionRemoveButtons();
+        return id;
     }
 
-    function removeOption(btn) {
-        const th = btn.closest('th');
-        const colIndex = th.cellIndex;
+    function appendScoreItem(scoreGrid, optionId, label) {
+        var div = document.createElement('div');
+        div.className = 'score-item';
+        div.dataset.optionId = optionId;
+        div.innerHTML =
+            '<span class="score-label" data-option-id="' + optionId + '">' + (label || 'Option') + '</span>' +
+            '<input type="number" class="score-input" min="1" max="10" value="5">';
+        scoreGrid.appendChild(div);
+    }
 
-        th.remove();
-        optionCount--;
+    function updateOptionLabels(optionId, value) {
+        var pills = Array.from(document.querySelectorAll('.option-pill'));
+        var idx = pills.findIndex(function(p) { return p.dataset.optionId === optionId; });
+        var label = value.trim() || ('Option ' + (idx + 1));
+        document.querySelectorAll('.score-label[data-option-id="' + optionId + '"]').forEach(function(el) {
+            el.textContent = label;
+        });
+    }
 
-        document.querySelectorAll('#criteria-body tr').forEach(row => {
-            if (row.cells[colIndex]) row.deleteCell(colIndex);
+    function removeOption(id) {
+        var pill = document.querySelector('.option-pill[data-option-id="' + id + '"]');
+        if (pill) pill.remove();
+        document.querySelectorAll('.score-item[data-option-id="' + id + '"]').forEach(function(el) { el.remove(); });
+        updateOptionRemoveButtons();
+    }
+
+    function updateOptionRemoveButtons() {
+        var pills = document.querySelectorAll('.option-pill');
+        pills.forEach(function(pill) {
+            var btn = pill.querySelector('.remove-option-btn');
+            if (btn) btn.disabled = pills.length <= 2;
+        });
+    }
+
+    // ── Criterion management ───────────────────────────────────────────────
+    function addCriterion(name, weight, focusNew) {
+        name = name || '';
+        weight = weight || 5;
+        focusNew = focusNew !== false;
+        var idx = document.querySelectorAll('.criterion-block').length + 1;
+
+        var block = document.createElement('div');
+        block.className = 'criterion-block';
+
+        var top = document.createElement('div');
+        top.className = 'criterion-top';
+        top.innerHTML =
+            '<input type="text" class="criterion-input" placeholder="Criterion ' + idx + '" value="' + name + '">' +
+            '<div class="weight-field">' +
+            '<span class="weight-label-text">Weight</span>' +
+            '<input type="number" class="weight-input" min="1" max="10" value="' + weight + '">' +
+            '</div>' +
+            '<button type="button" class="remove-btn" onclick="removeCriterion(this)">×</button>';
+
+        var scoreGrid = document.createElement('div');
+        scoreGrid.className = 'score-grid';
+
+        document.querySelectorAll('.option-pill').forEach(function(pill) {
+            var oid = pill.dataset.optionId;
+            var inp = pill.querySelector('.option-name-input');
+            appendScoreItem(scoreGrid, oid, inp.value.trim() || inp.placeholder);
         });
 
-        updateRemoveButtons();
-    }
+        block.appendChild(top);
+        block.appendChild(scoreGrid);
+        document.getElementById('criteria-container').appendChild(block);
 
-    // ── Add / remove criteria (rows) ───────────────────────────────────────
-    function addCriterion(focusNew = true) {
-        criterionCount++;
-        const tbody = document.getElementById('criteria-body');
-        const tr = document.createElement('tr');
-
-        // Criterion name cell
-        const critTd = document.createElement('td');
-        critTd.innerHTML = `<input type="text" class="criterion-input" placeholder="Criterion ${criterionCount}">`;
-        tr.appendChild(critTd);
-
-        // Weight cell
-        const weightTd = document.createElement('td');
-        weightTd.innerHTML = `<input type="number" class="weight-input" min="1" max="10" value="5">`;
-        tr.appendChild(weightTd);
-
-        // One score cell per current option
-        for (let j = 0; j < optionCount; j++) {
-            const scoreTd = document.createElement('td');
-            scoreTd.className = 'score-td';
-            scoreTd.innerHTML = `<input type="number" class="score-input" min="1" max="10" value="5">`;
-            tr.appendChild(scoreTd);
-        }
-
-        // Remove button cell
-        const removeTd = document.createElement('td');
-        removeTd.className = 'remove-td';
-        removeTd.innerHTML = `<button type="button" class="remove-btn" onclick="removeCriterion(this)" title="Remove">×</button>`;
-        tr.appendChild(removeTd);
-
-        tbody.appendChild(tr);
-
-        if (focusNew) {
-            tr.querySelector('.criterion-input').focus();
-        }
-        updateRemoveButtons();
+        if (focusNew) block.querySelector('.criterion-input').focus();
+        updateCriterionRemoveButtons();
     }
 
     function removeCriterion(btn) {
-        btn.closest('tr').remove();
-        criterionCount--;
-        updateRemoveButtons();
+        btn.closest('.criterion-block').remove();
+        updateCriterionRemoveButtons();
     }
 
-    // ── Disable remove buttons when at minimum ─────────────────────────────
-    function updateRemoveButtons() {
-        const optionHeaders = document.querySelectorAll('.option-header');
-        optionHeaders.forEach(th => {
-            const btn = th.querySelector('.remove-option-btn');
-            if (btn) btn.disabled = optionHeaders.length <= 2;
-        });
-
-        const criterionRows = document.querySelectorAll('#criteria-body tr');
-        criterionRows.forEach(row => {
-            const btn = row.querySelector('.remove-btn');
-            if (btn) btn.disabled = criterionRows.length <= 1;
+    function updateCriterionRemoveButtons() {
+        var blocks = document.querySelectorAll('.criterion-block');
+        blocks.forEach(function(block) {
+            var btn = block.querySelector('.remove-btn');
+            if (btn) btn.disabled = blocks.length <= 1;
         });
     }
 
-    // ── Example data ───────────────────────────────────────────────────────
+    // ── Init & example ─────────────────────────────────────────────────────
+    function initForm(numOptions, numCriteria) {
+        document.getElementById('options-container').innerHTML = '';
+        document.getElementById('criteria-container').innerHTML = '';
+        nextOptionId = 1;
+        for (var j = 0; j < numOptions; j++) addOption('', false);
+        for (var i = 0; i < numCriteria; i++) addCriterion('', 5, false);
+        updateOptionRemoveButtons();
+        updateCriterionRemoveButtons();
+    }
+
     function loadExample() {
-        const ex = {
-            options: ['Chipotle', 'Olive Garden', "Chick-fil-A"],
+        var ex = {
+            options: ['Chipotle', 'Olive Garden', 'Chick-fil-A'],
             criteria: [
                 { name: 'Food Quality', weight: 9, scores: [7, 9, 8] },
                 { name: 'Price',        weight: 8, scores: [8, 4, 7] },
                 { name: 'Wait Time',    weight: 6, scores: [7, 3, 9] },
-                { name: 'Atmosphere',   weight: 4, scores: [5, 9, 6] },
+                { name: 'Atmosphere',   weight: 4, scores: [5, 9, 6] }
             ]
         };
+        document.getElementById('options-container').innerHTML = '';
+        document.getElementById('criteria-container').innerHTML = '';
+        nextOptionId = 1;
 
-        initTable(ex.options.length, ex.criteria.length);
-
-        document.querySelectorAll('.option-name-input').forEach((inp, j) => {
-            inp.value = ex.options[j] || '';
-        });
-
-        document.querySelectorAll('#criteria-body tr').forEach((row, i) => {
-            row.querySelector('.criterion-input').value = ex.criteria[i].name;
-            row.querySelector('.weight-input').value = ex.criteria[i].weight;
-            row.querySelectorAll('.score-input').forEach((inp, j) => {
-                inp.value = ex.criteria[i].scores[j];
+        var ids = ex.options.map(function(name) { return addOption(name, false); });
+        ex.criteria.forEach(function(crit, i) {
+            addCriterion(crit.name, crit.weight, false);
+            var block = document.querySelectorAll('.criterion-block')[i];
+            ids.forEach(function(id, j) {
+                var item = block.querySelector('.score-item[data-option-id="' + id + '"]');
+                if (item) item.querySelector('.score-input').value = crit.scores[j];
             });
         });
+        updateOptionRemoveButtons();
+        updateCriterionRemoveButtons();
     }
 
-    // ── Serialize & submit ─────────────────────────────────────────────────
-    document.getElementById('decision-form').addEventListener('submit', function (e) {
-        const optionInputs = document.querySelectorAll('.option-name-input');
-        const optionNames = Array.from(optionInputs).map((inp, i) => inp.value.trim() || `Option ${i + 1}`);
+    // ── Serialize & submit ──────────────────────────────────────────────────
+    document.getElementById('decision-form').addEventListener('submit', function(e) {
+        var pills = Array.from(document.querySelectorAll('.option-pill'));
+        var optionIds   = pills.map(function(p) { return p.dataset.optionId; });
+        var optionNames = pills.map(function(p, i) {
+            var inp = p.querySelector('.option-name-input');
+            return inp.value.trim() || inp.placeholder || ('Option ' + (i + 1));
+        });
 
-        if (optionNames.length < 2) {
-            e.preventDefault();
-            alert('Please add at least 2 options.');
-            return;
-        }
+        if (pills.length < 2) { e.preventDefault(); alert('Please add at least 2 options.'); return; }
 
-        const criterionRows = document.querySelectorAll('#criteria-body tr');
-        if (criterionRows.length < 1) {
-            e.preventDefault();
-            alert('Please add at least 1 criterion.');
-            return;
-        }
+        var blocks = Array.from(document.querySelectorAll('.criterion-block'));
+        if (blocks.length < 1) { e.preventDefault(); alert('Please add at least 1 criterion.'); return; }
 
-        const criteriaNames = [];
-        const weights = [];
-        const scores = [];
-
-        criterionRows.forEach(row => {
-            criteriaNames.push(row.querySelector('.criterion-input').value.trim() || 'Criterion');
-            weights.push(parseInt(row.querySelector('.weight-input').value) || 5);
-            scores.push(Array.from(row.querySelectorAll('.score-input')).map(inp => parseInt(inp.value) || 5));
+        var criteriaNames = [], weights = [], scores = [];
+        blocks.forEach(function(block) {
+            var nameInp = block.querySelector('.criterion-input');
+            criteriaNames.push(nameInp.value.trim() || nameInp.placeholder || 'Criterion');
+            weights.push(parseInt(block.querySelector('.weight-input').value) || 5);
+            scores.push(optionIds.map(function(id) {
+                var item = block.querySelector('.score-item[data-option-id="' + id + '"]');
+                return item ? (parseInt(item.querySelector('.score-input').value) || 5) : 5;
+            }));
         });
 
         document.getElementById('option_names_json').value = JSON.stringify(optionNames);
-        document.getElementById('criteria_json').value = JSON.stringify(criteriaNames);
-        document.getElementById('weights_json').value = JSON.stringify(weights);
-        document.getElementById('scores_json').value = JSON.stringify(scores);
+        document.getElementById('criteria_json').value     = JSON.stringify(criteriaNames);
+        document.getElementById('weights_json').value      = JSON.stringify(weights);
+        document.getElementById('scores_json').value       = JSON.stringify(scores);
 
-        const btn = document.getElementById('submit-btn');
+        var btn = document.getElementById('submit-btn');
         btn.textContent = 'Analyzing…';
         btn.disabled = true;
     });
+
+    // ── Boot ───────────────────────────────────────────────────────────────
+    initForm(2, 4);
+
+    // Auto-scroll to results after a POST
+    var anchor = document.getElementById('results');
+    if (anchor) {
+        setTimeout(function() {
+            anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 180);
+    }
     </script>
 </body>
 </html>
