@@ -331,6 +331,40 @@ button:disabled { opacity: 0.3; cursor: default; }
 
 .btn-ghost:hover { background: var(--surface-up); color: var(--text); }
 
+/* ── Example picker dropdown ──────────────────────────────────────────── */
+.example-picker { position: relative; }
+
+.example-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--surface-up);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5px;
+    min-width: 170px;
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: popIn 0.14s ease;
+}
+
+.example-menu.open { display: block; }
+
+.example-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 9px 13px;
+    border-radius: 7px;
+    background: none;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.example-menu button:hover { background: var(--surface-high); }
+
 .btn-add {
     background: var(--accent-dim);
     color: var(--accent);

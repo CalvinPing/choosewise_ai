@@ -297,7 +297,7 @@
         });
     }
 
-    // ── Init & example ─────────────────────────────────────────────────────
+    // ── Init & examples ────────────────────────────────────────────────────
     function initForm(numOptions, numCriteria) {
         document.getElementById('options-container').innerHTML = '';
         document.getElementById('criteria-container').innerHTML = '';
@@ -308,8 +308,8 @@
         updateCriterionRemoveButtons();
     }
 
-    function loadExample() {
-        var ex = {
+    var EXAMPLES = {
+        restaurants: {
             options: ['Chipotle', 'Olive Garden', 'Chick-fil-A'],
             criteria: [
                 { name: 'Food Quality', weight: 9, scores: [7, 9, 8] },
@@ -317,12 +317,35 @@
                 { name: 'Wait Time',    weight: 6, scores: [7, 3, 9] },
                 { name: 'Atmosphere',   weight: 4, scores: [5, 9, 6] }
             ]
-        };
+        },
+        assignments: {
+            options: ['Math HW', 'English Essay', 'CS Project', 'Reading Quiz'],
+            criteria: [
+                // Higher score = more urgent / harder / more impactful = start first
+                { name: 'Due Date Urgency', weight: 10, scores: [8, 6, 5, 9] },
+                { name: 'Time Required',    weight: 7,  scores: [6, 8, 9, 4] },
+                { name: 'Grade Impact',     weight: 9,  scores: [7, 8, 9, 4] },
+                { name: 'Difficulty',       weight: 6,  scores: [7, 6, 9, 3] }
+            ]
+        },
+        apartments: {
+            options: ['Studio Downtown', '1BR Midtown', '2BR Suburb'],
+            criteria: [
+                { name: 'Rent',         weight: 9, scores: [4, 7, 9] },
+                { name: 'Commute',      weight: 8, scores: [10, 7, 3] },
+                { name: 'Space',        weight: 6, scores: [3, 7, 10] },
+                { name: 'Neighborhood', weight: 7, scores: [8, 7, 5] }
+            ]
+        }
+    };
+
+    function loadExample(name) {
+        var ex = EXAMPLES[name] || EXAMPLES.restaurants;
         document.getElementById('options-container').innerHTML = '';
         document.getElementById('criteria-container').innerHTML = '';
         nextOptionId = 1;
 
-        var ids = ex.options.map(function(name) { return addOption(name, false); });
+        var ids = ex.options.map(function(optName) { return addOption(optName, false); });
         ex.criteria.forEach(function(crit, i) {
             addCriterion(crit.name, crit.weight, false);
             var block = document.querySelectorAll('.criterion-block')[i];
@@ -333,7 +356,18 @@
         });
         updateOptionRemoveButtons();
         updateCriterionRemoveButtons();
+        document.getElementById('example-menu').classList.remove('open');
     }
+
+    function toggleExampleMenu() {
+        document.getElementById('example-menu').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#example-picker')) {
+            document.getElementById('example-menu').classList.remove('open');
+        }
+    });
 
     // ── Serialize & submit ──────────────────────────────────────────────────
     document.getElementById('decision-form').addEventListener('submit', function(e) {
