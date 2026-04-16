@@ -26,15 +26,13 @@ body {
 }
 
 .page {
-    max-width: 960px;
+    max-width: 1040px;
     margin: 0 auto;
     padding: 36px 20px 60px;
 }
 
 /* ── Hero ── */
-.hero {
-    margin-bottom: 24px;
-}
+.hero { margin-bottom: 24px; }
 
 .hero h1 {
     margin: 0 0 6px;
@@ -46,7 +44,19 @@ body {
 .subtitle {
     margin: 0;
     color: var(--muted);
-    font-size: 1.05rem;
+    font-size: 1.02rem;
+    max-width: 600px;
+}
+
+/* ── Error banner ── */
+.error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.93rem;
 }
 
 /* ── Cards ── */
@@ -63,193 +73,233 @@ body {
     font-size: 1.15rem;
 }
 
-/* ── Option name inputs ── */
-.option-names {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 22px;
-}
-
-/* ── Criteria header row ── */
-.criteria-header {
+/* ── Form toolbar ── */
+.form-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     gap: 12px;
-    margin-bottom: 4px;
+    margin-bottom: 20px;
 }
 
-.criteria-header h2 {
-    margin-bottom: 2px;
-}
-
-/* ── Criteria grid ── */
-.grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 32px;
-    gap: 10px;
-    align-items: center;
-}
-
-.headings {
-    margin: 8px 0 10px;
-    color: var(--muted);
-    font-size: 0.88rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.row {
-    margin-bottom: 10px;
-}
-
-/* ── Labels ── */
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-/* ── Inputs ── */
-input[type="text"],
-input:not([type]) {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    font-size: 0.97rem;
-    color: var(--text);
-    background: #fff;
-    transition: border-color 0.15s;
-}
-
-input[type="number"] {
-    width: 100%;
-    padding: 10px 8px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    font-size: 0.97rem;
-    color: var(--text);
-    background: #fff;
-    text-align: center;
-    transition: border-color 0.15s;
-}
-
-input:focus {
-    outline: none;
-    border-color: var(--accent);
-}
-
-/* ── Helper text ── */
 .helper {
-    margin: 0 0 4px;
+    margin: 0;
     color: var(--muted);
     font-size: 0.9rem;
+}
+
+/* ── Table wrapper (horizontal scroll on small screens) ── */
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px;
+}
+
+/* ── Input table (the form grid) ── */
+#decision-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 480px;
+}
+
+#decision-table thead th {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--line);
+    white-space: nowrap;
+}
+
+#decision-table tbody td {
+    padding: 6px 6px;
+    vertical-align: middle;
+}
+
+#decision-table tfoot td {
+    padding: 10px 4px 4px;
+}
+
+.col-criterion { width: 220px; min-width: 160px; }
+.col-weight    { width: 80px;  min-width: 72px; text-align: center; }
+.col-add-option{ width: 100px; min-width: 90px; }
+.col-remove    { width: 36px; }
+
+/* ── Option header inputs ── */
+.option-header { min-width: 120px; }
+
+.option-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.option-name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #f9fafb;
+}
+
+.option-name-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+}
+
+/* ── Criterion & score inputs ── */
+.criterion-input,
+.weight-input,
+.score-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 0.93rem;
+    color: var(--text);
+    background: #fff;
+    transition: border-color 0.15s;
+}
+
+.weight-input,
+.score-input {
+    text-align: center;
+}
+
+.criterion-input:focus,
+.weight-input:focus,
+.score-input:focus {
+    outline: none;
+    border-color: var(--accent);
 }
 
 /* ── Buttons ── */
 button {
     border: none;
     cursor: pointer;
-    font-size: 0.97rem;
-    border-radius: 10px;
-    transition: background 0.15s, opacity 0.15s;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    transition: background 0.14s, opacity 0.14s;
 }
 
 button:disabled {
-    opacity: 0.45;
+    opacity: 0.38;
     cursor: default;
 }
 
 #submit-btn {
     background: var(--accent);
     color: #fff;
-    padding: 11px 22px;
+    padding: 11px 26px;
     font-weight: 600;
     font-size: 1rem;
+    border-radius: 10px;
 }
 
-#submit-btn:hover:not(:disabled) {
-    background: var(--accent-hover);
-}
+#submit-btn:hover:not(:disabled) { background: var(--accent-hover); }
 
 .btn-secondary {
     background: #f3f4f6;
     color: var(--text);
-    padding: 9px 14px;
+    padding: 8px 14px;
     border: 1px solid var(--line);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
 }
 
-.btn-secondary:hover {
-    background: #e9eaec;
+.btn-secondary:hover { background: #e9eaec; }
+
+.btn-add-col {
+    background: var(--blue-bg);
+    color: #1d4ed8;
+    border: 1px solid var(--blue-border);
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    width: 100%;
 }
 
-.remove-btn {
+.btn-add-col:hover { background: #dbeafe; }
+
+.btn-add-row {
     background: none;
     color: var(--muted);
-    font-size: 1.15rem;
-    padding: 0;
-    width: 28px;
-    height: 28px;
+    padding: 4px 8px;
+    font-size: 0.88rem;
+    border: 1px dashed var(--line);
     border-radius: 6px;
+}
+
+.btn-add-row:hover { background: #f3f4f6; color: var(--text); }
+
+.remove-btn,
+.remove-option-btn {
+    background: none;
+    color: var(--muted);
+    font-size: 1.1rem;
+    padding: 0;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
 }
 
-.remove-btn:hover:not(:disabled) {
+.remove-btn:hover:not(:disabled),
+.remove-option-btn:hover:not(:disabled) {
     background: #fee2e2;
     color: #dc2626;
 }
 
 .form-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 16px;
-    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 18px;
 }
 
 /* ── Results: Score table ── */
-table {
+.results-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 14px;
-    font-size: 0.95rem;
+    font-size: 0.93rem;
+    min-width: 400px;
 }
 
-th {
+.results-table th {
     text-align: left;
     padding: 10px 12px;
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border-bottom: 2px solid var(--line);
+    white-space: nowrap;
 }
 
-td {
-    padding: 11px 12px;
+.results-table td {
+    padding: 10px 12px;
     border-bottom: 1px solid var(--line);
 }
 
-tr:last-child td {
-    border-bottom: none;
-}
+.results-table tr:last-child td { border-bottom: none; }
 
-.top-row td {
-    background: #fffbeb;
-}
+.top-row td { background: #fffbeb; }
 
 .top-badge {
     display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     background: #fef3c7;
@@ -260,54 +310,34 @@ tr:last-child td {
     vertical-align: middle;
 }
 
-.cell-win {
-    color: var(--win-text);
-    font-weight: 700;
-}
+.cell-win  { color: var(--win-text); font-weight: 700; }
+.cell-lose { color: var(--lose-text); }
 
-.cell-lose {
-    color: var(--lose-text);
-}
-
-/* ── Totals row ── */
-.totals {
+/* ── Ranked totals ── */
+.ranked-totals {
     display: flex;
-    gap: 14px;
-    margin-top: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.total-box {
+.rank-box {
     flex: 1;
+    min-width: 120px;
     background: #f9fafb;
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 14px 16px;
-    position: relative;
 }
 
-.total-box.winner {
+.rank-box.winner {
     background: var(--green-bg);
     border-color: var(--green-border);
 }
 
-.total-box span {
-    display: block;
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-}
+.rank-number { margin-bottom: 6px; }
 
-.total-box strong {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.total-box.winner strong {
-    color: var(--green);
-}
-
-.winner-label {
+.rank-medal {
     display: inline-block;
     font-size: 0.72rem;
     font-weight: 700;
@@ -317,8 +347,35 @@ tr:last-child td {
     background: var(--green-border);
     border-radius: 4px;
     padding: 2px 7px;
-    margin-bottom: 6px;
 }
+
+.rank-place {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    background: #f3f4f6;
+    border-radius: 4px;
+    padding: 2px 7px;
+}
+
+.rank-name {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
+
+.rank-score {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.rank-box.winner .rank-score { color: var(--green); }
 
 /* ── Recommendation card ── */
 .badge-row {
@@ -352,7 +409,7 @@ tr:last-child td {
     border: 1px solid var(--green-border);
     border-radius: 12px;
     padding: 16px 20px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 .best-option-callout.tie {
@@ -361,7 +418,7 @@ tr:last-child td {
 }
 
 .callout-label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -369,9 +426,7 @@ tr:last-child td {
     margin-bottom: 2px;
 }
 
-.best-option-callout.tie .callout-label {
-    color: var(--muted);
-}
+.best-option-callout.tie .callout-label { color: var(--muted); }
 
 .callout-value {
     font-size: 1.4rem;
@@ -379,18 +434,35 @@ tr:last-child td {
     color: var(--text);
 }
 
+.ranking-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+}
+
+.ranking-label {
+    font-weight: 600;
+    color: var(--muted);
+    margin-right: 4px;
+}
+
+.ranking-item { color: var(--text); }
+
+.ranking-sep { color: var(--muted); margin: 0 2px; }
+
 .rec-summary {
     color: var(--text);
     margin: 0 0 20px;
     line-height: 1.6;
 }
 
-.rec-section {
-    margin-bottom: 18px;
-}
+.rec-section { margin-bottom: 18px; }
 
 .rec-section h3 {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -398,20 +470,9 @@ tr:last-child td {
     margin: 0 0 8px;
 }
 
-.rec-section ul {
-    margin: 0;
-    padding-left: 18px;
-}
-
-.rec-section li {
-    margin-bottom: 5px;
-    line-height: 1.5;
-}
-
-.rec-section p {
-    margin: 0;
-    line-height: 1.6;
-}
+.rec-section ul { margin: 0; padding-left: 18px; }
+.rec-section li { margin-bottom: 5px; line-height: 1.5; }
+.rec-section p  { margin: 0; line-height: 1.6; }
 
 .next-step {
     background: #f9fafb;
@@ -421,37 +482,10 @@ tr:last-child td {
 }
 
 /* ── Responsive ── */
-@media (max-width: 680px) {
-    .option-names,
-    .totals {
-        grid-template-columns: 1fr;
-        flex-direction: column;
-    }
-
-    .grid {
-        grid-template-columns: 1fr;
-    }
-
-    .headings {
-        display: none;
-    }
-
-    .criteria-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .badge-row {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .form-actions {
-        flex-direction: column-reverse;
-        align-items: stretch;
-    }
-
-    #submit-btn {
-        text-align: center;
-    }
+@media (max-width: 640px) {
+    .hero h1 { font-size: 1.9rem; }
+    .form-toolbar { flex-direction: column; align-items: flex-start; }
+    .badge-row { flex-direction: column; align-items: flex-start; }
+    .ranked-totals { flex-direction: column; }
+    .rank-box { min-width: unset; }
 }
