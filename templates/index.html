@@ -399,6 +399,8 @@
         document.getElementById('weights_json').value      = JSON.stringify(weights);
         document.getElementById('scores_json').value       = JSON.stringify(scores);
 
+        sessionStorage.setItem('choosewise_scroll', '1');
+
         var btn = document.getElementById('submit-btn');
         btn.textContent = 'Analyzing…';
         btn.disabled = true;
@@ -407,9 +409,10 @@
     // ── Boot ───────────────────────────────────────────────────────────────
     initForm(2, 4);
 
-    // Auto-scroll to results after a POST
+    // Auto-scroll to results only when arriving from a form submission, not on reload
     var anchor = document.getElementById('results');
-    if (anchor) {
+    if (anchor && sessionStorage.getItem('choosewise_scroll') === '1') {
+        sessionStorage.removeItem('choosewise_scroll');
         setTimeout(function() {
             anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 180);
