@@ -9,8 +9,11 @@
 <body>
     <main class="page">
         <section class="hero">
-            <h1>ChooseWise</h1>
-            <p class="subtitle">Compare any number of options — apartments, restaurants, assignments, job offers — using weighted scoring and AI reasoning.</p>
+            <img src="{{ url_for('static', filename='Choosewise_Logo-removebg-preview-onlylogo.png') }}" alt="ChooseWise logo" class="hero-logo">
+            <div class="hero-text">
+                <h1>ChooseWise</h1>
+                <p class="subtitle">AI-powered decision making. Compare any options — apartments, restaurants, assignments — with weighted scoring and AI reasoning.</p>
+            </div>
         </section>
 
         {% if error %}
